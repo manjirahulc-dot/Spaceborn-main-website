@@ -7,14 +7,15 @@ interface LazyVideoProps extends React.VideoHTMLAttributes<HTMLVideoElement> {
 }
 
 export const LazyVideo = forwardRef<HTMLVideoElement, LazyVideoProps>(
-  ({ children, ...props }, forwardedRef) => {
+  ({ children, style, onLoadedData, ...props }, forwardedRef) => {
     const internalRef = useRef<HTMLVideoElement>(null);
     const [hasIntersected, setHasIntersected] = useState(false);
+    const [isReady, setIsReady] = useState(false);
 
-    // Track intersection
+    // Start loading well before the tile reaches the screen
     const entry = useIntersectionObserver(internalRef, {
       freezeOnceVisible: true,
-      rootMargin: '200px', // start loading before it completely enters the viewport
+      rootMargin: '1000px 0px',
     });
 
     useEffect(() => {
@@ -22,6 +23,13 @@ export const LazyVideo = forwardRef<HTMLVideoElement, LazyVideoProps>(
         setHasIntersected(true);
       }
     }, [entry?.isIntersecting]);
+
+    // Once the sources are in the DOM, tell the browser to start fetching
+    useEffect(() => {
+      if (hasIntersected) {
+        internalRef.current?.load();
+      }
+    }, [hasIntersected]);
 
     // Handle ref forwarding
     useEffect(() => {
@@ -33,7 +41,20 @@ export const LazyVideo = forwardRef<HTMLVideoElement, LazyVideoProps>(
     }, [forwardedRef, internalRef]);
 
     return (
-      <video ref={internalRef} {...props}>
+      <video
+        ref={internalRef}
+        preload="auto"
+        {...props}
+        style={{
+          opacity: isReady ? 1 : 0,
+          transition: 'opacity 0.4s ease',
+          ...style,
+        }}
+        onLoadedData={(e) => {
+          setIsReady(true);
+          onLoadedData?.(e);
+        }}
+      >
         {hasIntersected ? children : null}
       </video>
     );

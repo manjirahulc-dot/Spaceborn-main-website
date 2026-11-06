@@ -21,7 +21,7 @@ const cldPoster = (path: string, width: number) =>
 
 const CLD_USER = 'https://res.cloudinary.com/jyr596tn';
 const cldUserImg = (file: string) => `${CLD_USER}/image/upload/f_auto,q_auto:good/spaceborn_media/home/${file}`;
-const cldUserVid = (file: string) => `${CLD_USER}/video/upload/f_auto,q_auto:good/spaceborn_media/home/${file}.mp4`;
+const cldUserVid = (file: string) => `${CLD_USER}/video/upload/f_auto,q_auto:good,w_1200,c_limit/spaceborn_media/home/${file}.mp4`;
 
 type Tile = {
   id: string;
@@ -45,8 +45,8 @@ const TILES: Tile[] = [
     desc: 'ELARA boards from STM32F7 to STM32H7, running the ANSA autonomy stack through one HAL.',
     href: '/systems/flight-cont',
     size: 'wide',
-    image: cldPoster('v1785868057/VideoProject_hzk4kg', 1600),
-    video: cldVideo('v1785868057/VideoProject_hzk4kg', 1600),
+    image: cldPoster('v1785868057/VideoProject_hzk4kg', 1200),
+    video: cldVideo('v1785868057/VideoProject_hzk4kg', 1200),
     alt: 'ELARA flight controller mounted on a drone frame',
   },
   {
@@ -57,7 +57,7 @@ const TILES: Tile[] = [
     href: '/systems/flight-cont',
     size: 'tall',
     image: `${CLD_USER}/image/upload/v1793623358/spaceborn_media/home/elara-sb2.webp`,
-    video: `${CLD_USER}/video/upload/v1793631026/spaceborn_media/home/elara-sb2.mp4`,
+    video: `${CLD_USER}/video/upload/f_auto,q_auto:good,w_900,c_limit/v1793631026/spaceborn_media/home/elara-sb2.mp4`,
     alt: 'ELARA SB2 flight controller on a dark surface',
   },
   {
@@ -241,7 +241,7 @@ const SCENARIOS: Scenario[] = [
     desc: 'Four robot stations, a conveyor, and an inspection line in a simulated factory, proven before any arm moves on the floor.',
     readouts: [['STATIONS', '4'], ['LINE', 'INSPECTION'], ['DOMAIN', 'INDUSTRIAL']],
     video: {
-      src: `${CLD_USER}/video/upload/v1793615952/spaceborn_media/home/sim-factory.mp4`,
+      src: `${CLD_USER}/video/upload/f_auto,q_auto:good,w_1600,c_limit/v1793615952/spaceborn_media/home/sim-factory.mp4`,
       poster: `${CLD_USER}/image/upload/v1793615954/spaceborn_media/home/sim-factory.webp`,
     },
   },
@@ -471,7 +471,7 @@ function ProductTile({ tile, index }: { tile: Tile; index: number }) {
   const isAria = tile.id === 'aria';
   const isGcs = tile.id === 'gcs';
 
-  // Continuous In-View Auto-Playback across ALL viewports (phone, tablet, laptop, desktop)
+  // Start playback well before the tile scrolls into view, so footage is ready on arrival
   useEffect(() => {
     if (!tile.video || reduceMotion) return;
 
@@ -490,11 +490,11 @@ function ProductTile({ tile, index }: { tile: Tile; index: number }) {
               .then(() => setPlaying(true))
               .catch(() => {});
           }
-          // Never stop playing once the user scrolls to it (Anduril continuous playback)
+          // Never stop playing once the user scrolls near it (continuous playback)
           observer.disconnect();
         }
       },
-      { threshold: 0.05 }
+      { threshold: 0, rootMargin: '800px 0px' }
     );
 
     observer.observe(el);
@@ -524,11 +524,10 @@ function ProductTile({ tile, index }: { tile: Tile; index: number }) {
             ref={videoRef}
             className={`${styles.tileVideo} ${playing ? styles.tileVideoOn : ''}`}
             style={tile.position ? { objectPosition: tile.position } : undefined}
-            autoPlay
             muted
             loop
             playsInline
-            preload="auto"
+            preload="metadata"
             aria-hidden="true"
             onPlaying={() => {
               setPlaying(true);
@@ -560,7 +559,7 @@ function ProductTile({ tile, index }: { tile: Tile; index: number }) {
       data-tile={tile.id}
       initial={reduceMotion ? false : 'hidden'}
       whileInView="shown"
-      viewport={{ once: true, margin: '-80px' }}
+      viewport={{ once: true, margin: '300px 0px' }}
     >
       <motion.div
         className={styles.tileClip}
@@ -568,7 +567,7 @@ function ProductTile({ tile, index }: { tile: Tile; index: number }) {
           hidden: { clipPath: 'inset(0% 0% 100% 0%)' },
           shown: { clipPath: 'inset(0% 0% 0% 0%)' },
         }}
-        transition={{ duration: 0.7, ease: EASE_IN_OUT, delay: (index % 3) * 0.06 }}
+        transition={{ duration: 0.4, ease: EASE_IN_OUT }}
       >
         {tile.href.startsWith('http') ? (
           <a
